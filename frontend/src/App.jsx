@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
+import MainPage from './pages/MainPage';
 
 export const api = axios.create({ baseURL: 'http://localhost:8080/api' });
 
@@ -53,7 +54,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="/" element={<Protected><div>메인</div></Protected>} />
+          <Route path="/" element={<Protected><MainPage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </AuthContext.Provider>
