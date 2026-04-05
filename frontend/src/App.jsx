@@ -11,6 +11,7 @@ import ChatPage from './pages/ChatPage';
 import RoleplayPage from './pages/RoleplayPage';
 import QuizPage from './pages/QuizPage';
 import StatsPage from './pages/StatsPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 export const api = axios.create({ baseURL: 'http://localhost:8080/api' });
 
@@ -69,6 +70,7 @@ function App() {
           <Route path="/roleplay" element={<Protected><RoleplayPage /></Protected>} />
           <Route path="/quiz" element={<Protected><QuizPage /></Protected>} />
           <Route path="/stats" element={<Protected><StatsPage /></Protected>} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
     </AuthContext.Provider>
