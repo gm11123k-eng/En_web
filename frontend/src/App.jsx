@@ -4,6 +4,7 @@ import axios from 'axios';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import MainPage from './pages/MainPage';
+import ProfilePage from './pages/ProfilePage';
 
 export const api = axios.create({ baseURL: 'http://localhost:8080/api' });
 
@@ -55,6 +56,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/" element={<Protected><MainPage /></Protected>} />
+          <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </AuthContext.Provider>
