@@ -5,6 +5,12 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import MainPage from './pages/MainPage';
 import ProfilePage from './pages/ProfilePage';
+import WordPage from './pages/WordPage';
+import SentencePage from './pages/SentencePage';
+import ChatPage from './pages/ChatPage';
+import RoleplayPage from './pages/RoleplayPage';
+import QuizPage from './pages/QuizPage';
+import StatsPage from './pages/StatsPage';
 
 export const api = axios.create({ baseURL: 'http://localhost:8080/api' });
 
@@ -57,6 +63,12 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/" element={<Protected><MainPage /></Protected>} />
           <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
+          <Route path="/word" element={<Protected><WordPage /></Protected>} />
+          <Route path="/sentence" element={<Protected><SentencePage /></Protected>} />
+          <Route path="/chat" element={<Protected><ChatPage /></Protected>} />
+          <Route path="/roleplay" element={<Protected><RoleplayPage /></Protected>} />
+          <Route path="/quiz" element={<Protected><QuizPage /></Protected>} />
+          <Route path="/stats" element={<Protected><StatsPage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </AuthContext.Provider>
