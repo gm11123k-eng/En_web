@@ -6,11 +6,11 @@ export default function MainPage() {
   const { user } = useAuth();
 
   const menus = [
-    { title: '단어 학습', desc: '테마별 단어를 AI와 함께', to: '/word' },
-    { title: '문장 학습', desc: '문법, 기초, 고급 카테고리', to: '/sentence' },
+    { title: '단어 학습', desc: '테마별 단어와 예문을 AI와 함께', to: '/word' },
     { title: 'AI 대화', desc: '자유롭게 영어로 대화하기', to: '/chat' },
     { title: '롤플레이', desc: '상황별 역할극 연습', to: '/roleplay' },
-    { title: '퀴즈', desc: '복습과 오답노트', to: '/quiz' },
+    { title: '퀴즈', desc: '학습한 단어로 실력 테스트', to: '/quiz' },
+    { title: '오답노트', desc: '틀린 문제 다시 보기', to: '/wrong-answers' },
     { title: '통계', desc: '나의 학습 기록 보기', to: '/stats' },
   ];
 

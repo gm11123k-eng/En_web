@@ -6,10 +6,10 @@ import SignupPage from './pages/SignupPage';
 import MainPage from './pages/MainPage';
 import ProfilePage from './pages/ProfilePage';
 import WordPage from './pages/WordPage';
-import SentencePage from './pages/SentencePage';
 import ChatPage from './pages/ChatPage';
 import RoleplayPage from './pages/RoleplayPage';
 import QuizPage from './pages/QuizPage';
+import WrongAnswerPage from './pages/WrongAnswerPage';
 import StatsPage from './pages/StatsPage';
 import NotFoundPage from './pages/NotFoundPage';
 
@@ -65,10 +65,10 @@ function App() {
           <Route path="/" element={<Protected><MainPage /></Protected>} />
           <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
           <Route path="/word" element={<Protected><WordPage /></Protected>} />
-          <Route path="/sentence" element={<Protected><SentencePage /></Protected>} />
           <Route path="/chat" element={<Protected><ChatPage /></Protected>} />
           <Route path="/roleplay" element={<Protected><RoleplayPage /></Protected>} />
           <Route path="/quiz" element={<Protected><QuizPage /></Protected>} />
+          <Route path="/wrong-answers" element={<Protected><WrongAnswerPage /></Protected>} />
           <Route path="/stats" element={<Protected><StatsPage /></Protected>} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
