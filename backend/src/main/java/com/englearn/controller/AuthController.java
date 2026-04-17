@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
 @RestController
@@ -20,6 +22,18 @@ import java.util.Map;
 public class AuthController {
 
     private final MemberRepository memberRepository;
+
+    private String hashPassword(String password) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(password.getBytes());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) sb.append(String.format("%02x", b));
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public record SignupRequest(
             @NotBlank(message = "이메일을 입력하세요.")
@@ -46,7 +60,7 @@ public class AuthController {
 
         Member member = Member.builder()
                 .email(req.email())
-                .password(req.password())
+                .password(hashPassword(req.password()))
                 .nickname(req.nickname())
                 .build();
         memberRepository.save(member);
@@ -57,7 +71,7 @@ public class AuthController {
     @PostMapping("/auth/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest req) {
         Member member = memberRepository.findByEmail(req.email()).orElse(null);
-        if (member == null || !member.getPassword().equals(req.password())) {
+        if (member == null || !member.getPassword().equals(hashPassword(req.password()))) {
             return ResponseEntity.badRequest().body(Map.of("message", "이메일 또는 비밀번호가 올바르지 않습니다."));
         }
         return ResponseEntity.ok(Map.of(
