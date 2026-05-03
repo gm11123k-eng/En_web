@@ -94,7 +94,7 @@ export default function ChatPage() {
               {m.correction && (
                 <div style={s.correctionBubble}>
                   <div style={s.correctionLabel}>✏️ 교정</div>
-                  <span ref={el => { if (el) el.innerHTML = m.correction; }} />
+                  <span>{m.correction}</span>
                 </div>
               )}
             </div>
