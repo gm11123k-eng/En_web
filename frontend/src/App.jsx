@@ -66,6 +66,7 @@ function App() {
           <Route path="/profile" element={<Protected><ProfilePage /></Protected>} />
           <Route path="/word" element={<Protected><WordPage /></Protected>} />
           <Route path="/chat" element={<Protected><ChatPage /></Protected>} />
+          <Route path="/chat/:id" element={<Protected><ChatPage /></Protected>} />
           <Route path="/roleplay" element={<Protected><RoleplayPage /></Protected>} />
           <Route path="/quiz" element={<Protected><QuizPage /></Protected>} />
           <Route path="/wrong-answers" element={<Protected><WrongAnswerPage /></Protected>} />
