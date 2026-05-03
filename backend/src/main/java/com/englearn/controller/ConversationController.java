@@ -81,9 +81,9 @@ public class ConversationController {
     }
 
     @GetMapping("/conversations/{id}")
-    public ResponseEntity<?> getConversation(@PathVariable Long id) {
+    public ResponseEntity<?> getConversation(@PathVariable Long id, @RequestParam Long memberId) {
         Conversation conv = conversationRepository.findById(id).orElse(null);
-        if (conv == null) {
+        if (conv == null || !conv.getMemberId().equals(memberId)) {
             return ResponseEntity.badRequest().body(Map.of("message", "대화를 찾을 수 없습니다."));
         }
         List<ConversationMessage> messages = messageRepository.findByConversationIdOrderByCreatedAtAsc(id);

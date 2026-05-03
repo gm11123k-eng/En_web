@@ -15,7 +15,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (id) {
-      api.get('/conversations/' + id).then(res => {
+      api.get('/conversations/' + id, { params: { memberId: user.id } }).then(res => {
         setMessages(res.data.messages);
       });
     } else {
