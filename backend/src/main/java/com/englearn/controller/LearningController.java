@@ -3,6 +3,7 @@ package com.englearn.controller;
 import com.englearn.entity.Sentence;
 import com.englearn.entity.StudyHistory;
 import com.englearn.entity.Word;
+import com.englearn.repository.MemberRepository;
 import com.englearn.repository.SentenceRepository;
 import com.englearn.repository.StudyHistoryRepository;
 import com.englearn.repository.WordRepository;
@@ -26,7 +27,12 @@ public class LearningController {
     private final WordRepository wordRepository;
     private final SentenceRepository sentenceRepository;
     private final StudyHistoryRepository studyHistoryRepository;
+    private final MemberRepository memberRepository;
     private final EntityManager entityManager;
+
+    private boolean checkToken(Long memberId, String token) {
+        return token != null && memberRepository.existsByIdAndAuthToken(memberId, token);
+    }
 
     @Value("${gemini.api.key}")
     private String geminiApiKey;
@@ -93,6 +99,10 @@ public class LearningController {
     @PostMapping("/words/generate")
     public ResponseEntity<?> generateWords(@RequestBody Map<String, Object> body) {
         Long memberId = Long.valueOf(body.get("memberId").toString());
+        String token = body.get("token") != null ? body.get("token").toString() : null;
+        if (!checkToken(memberId, token)) {
+            return ResponseEntity.status(403).body(Map.of("message", "인증이 필요합니다."));
+        }
         String theme = body.get("theme").toString();
         int count = body.containsKey("count") ? Integer.parseInt(body.get("count").toString()) : 5;
 
@@ -150,7 +160,11 @@ public class LearningController {
 
     @GetMapping("/words")
     public ResponseEntity<?> getWords(@RequestParam Long memberId,
+                                      @RequestParam String token,
                                       @RequestParam(required = false) String theme) {
+        if (!checkToken(memberId, token)) {
+            return ResponseEntity.status(403).body(Map.of("message", "인증이 필요합니다."));
+        }
         List<Word> words;
         if (theme != null && !theme.isEmpty()) {
             words = wordRepository.findByMemberIdAndTheme(memberId, theme);
@@ -162,7 +176,11 @@ public class LearningController {
 
     @GetMapping("/words/search")
     public ResponseEntity<?> searchWords(@RequestParam Long memberId,
+                                         @RequestParam String token,
                                          @RequestParam String keyword) {
+        if (!checkToken(memberId, token)) {
+            return ResponseEntity.status(403).body(Map.of("message", "인증이 필요합니다."));
+        }
         String sql = "SELECT * FROM word WHERE member_id = " + memberId +
                 " AND (english LIKE '%" + keyword + "%' OR korean LIKE '%" + keyword + "%')";
         List<?> results = entityManager.createNativeQuery(sql, Word.class).getResultList();
@@ -209,7 +227,11 @@ public class LearningController {
 
     @GetMapping("/sentences")
     public ResponseEntity<?> getSentences(@RequestParam Long memberId,
+                                          @RequestParam String token,
                                           @RequestParam(required = false) String category) {
+        if (!checkToken(memberId, token)) {
+            return ResponseEntity.status(403).body(Map.of("message", "인증이 필요합니다."));
+        }
         List<Sentence> sentences;
         if (category != null && !category.isEmpty()) {
             sentences = sentenceRepository.findByMemberIdAndCategory(memberId, category);
@@ -222,6 +244,10 @@ public class LearningController {
     @PostMapping("/study-history")
     public ResponseEntity<?> saveStudyHistory(@RequestBody Map<String, Object> body) {
         Long memberId = Long.valueOf(body.get("memberId").toString());
+        String token = body.get("token") != null ? body.get("token").toString() : null;
+        if (!checkToken(memberId, token)) {
+            return ResponseEntity.status(403).body(Map.of("message", "인증이 필요합니다."));
+        }
         String contentType = body.get("contentType").toString();
         Long contentId = Long.valueOf(body.get("contentId").toString());
 
@@ -236,7 +262,11 @@ public class LearningController {
     }
 
     @GetMapping("/study-history")
-    public ResponseEntity<?> getStudyHistory(@RequestParam Long memberId) {
+    public ResponseEntity<?> getStudyHistory(@RequestParam Long memberId,
+                                             @RequestParam String token) {
+        if (!checkToken(memberId, token)) {
+            return ResponseEntity.status(403).body(Map.of("message", "인증이 필요합니다."));
+        }
         return ResponseEntity.ok(studyHistoryRepository.findByMemberId(memberId));
     }
 }

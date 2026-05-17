@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
@@ -74,17 +75,21 @@ public class AuthController {
         if (member == null || !member.getPassword().equals(hashPassword(req.password()))) {
             return ResponseEntity.badRequest().body(Map.of("message", "이메일 또는 비밀번호가 올바르지 않습니다."));
         }
+        String token = UUID.randomUUID().toString();
+        member.setAuthToken(token);
+        memberRepository.save(member);
         return ResponseEntity.ok(Map.of(
                 "memberId", member.getId(),
+                "token", token,
                 "email", member.getEmail(),
                 "nickname", member.getNickname()
         ));
     }
 
     @GetMapping("/members/me")
-    public ResponseEntity<?> getMe(@RequestParam Long memberId) {
+    public ResponseEntity<?> getMe(@RequestParam Long memberId, @RequestParam String token) {
         Member m = memberRepository.findById(memberId).orElse(null);
-        if (m == null) {
+        if (m == null || m.getAuthToken() == null || !m.getAuthToken().equals(token)) {
             return ResponseEntity.badRequest().body(Map.of("message", "회원을 찾을 수 없습니다."));
         }
         return ResponseEntity.ok(Map.of(

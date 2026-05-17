@@ -41,6 +41,9 @@ public class Member {
 
     private LocalDate lastStudyDate;
 
+    @Column(length = 100)
+    private String authToken;
+
     @CreatedDate
     private LocalDateTime createdAt;
 
@@ -49,5 +52,9 @@ public class Member {
         this.email = email;
         this.password = password;
         this.nickname = nickname;
+    }
+
+    public void setAuthToken(String authToken) {
+        this.authToken = authToken;
     }
 }

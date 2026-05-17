@@ -15,6 +15,17 @@ import NotFoundPage from './pages/NotFoundPage';
 
 export const api = axios.create({ baseURL: 'http://localhost:8080/api' });
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.params = { ...config.params, token };
+    if (config.data && typeof config.data === 'object') {
+      config.data = { ...config.data, token };
+    }
+  }
+  return config;
+});
+
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
 
@@ -27,7 +38,10 @@ function App() {
     if (memberId) {
       api.get('/members/me', { params: { memberId } })
         .then((res) => setUser(res.data))
-        .catch(() => localStorage.removeItem('memberId'))
+        .catch(() => {
+          localStorage.removeItem('memberId');
+          localStorage.removeItem('token');
+        })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
@@ -37,6 +51,7 @@ function App() {
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
     localStorage.setItem('memberId', res.data.memberId);
+    localStorage.setItem('token', res.data.token);
     const meRes = await api.get('/members/me', { params: { memberId: res.data.memberId } });
     setUser(meRes.data);
   };
@@ -47,6 +62,7 @@ function App() {
 
   const logout = () => {
     localStorage.removeItem('memberId');
+    localStorage.removeItem('token');
     setUser(null);
   };
 

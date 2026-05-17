@@ -4,6 +4,7 @@ import com.englearn.entity.Conversation;
 import com.englearn.entity.ConversationMessage;
 import com.englearn.repository.ConversationMessageRepository;
 import com.englearn.repository.ConversationRepository;
+import com.englearn.repository.MemberRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +23,14 @@ public class ConversationController {
 
     private final ConversationRepository conversationRepository;
     private final ConversationMessageRepository messageRepository;
+    private final MemberRepository memberRepository;
 
     @Value("${gemini.api.key}")
     private String geminiApiKey;
+
+    private boolean checkToken(Long memberId, String token) {
+        return token != null && memberRepository.existsByIdAndAuthToken(memberId, token);
+    }
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final RestTemplate restTemplate = new RestTemplate();
@@ -46,6 +52,10 @@ public class ConversationController {
     @PostMapping("/conversations")
     public ResponseEntity<?> createConversation(@RequestBody Map<String, Object> body) {
         Long memberId = Long.valueOf(body.get("memberId").toString());
+        String token = body.get("token") != null ? body.get("token").toString() : null;
+        if (!checkToken(memberId, token)) {
+            return ResponseEntity.status(403).body(Map.of("message", "인증이 필요합니다."));
+        }
 
         Conversation conv = Conversation.builder()
                 .memberId(memberId)
@@ -75,13 +85,20 @@ public class ConversationController {
     }
 
     @GetMapping("/conversations")
-    public ResponseEntity<?> getConversations(@RequestParam Long memberId) {
+    public ResponseEntity<?> getConversations(@RequestParam Long memberId, @RequestParam String token) {
+        if (!checkToken(memberId, token)) {
+            return ResponseEntity.status(403).body(Map.of("message", "인증이 필요합니다."));
+        }
         List<Conversation> list = conversationRepository.findByMemberIdAndTypeOrderByCreatedAtDesc(memberId, "free");
         return ResponseEntity.ok(list);
     }
 
     @GetMapping("/conversations/{id}")
-    public ResponseEntity<?> getConversation(@PathVariable Long id, @RequestParam Long memberId) {
+    public ResponseEntity<?> getConversation(@PathVariable Long id, @RequestParam Long memberId,
+                                             @RequestParam String token) {
+        if (!checkToken(memberId, token)) {
+            return ResponseEntity.status(403).body(Map.of("message", "인증이 필요합니다."));
+        }
         Conversation conv = conversationRepository.findById(id).orElse(null);
         if (conv == null || !conv.getMemberId().equals(memberId)) {
             return ResponseEntity.badRequest().body(Map.of("message", "대화를 찾을 수 없습니다."));
@@ -135,6 +152,10 @@ public class ConversationController {
     @PostMapping("/roleplay/start")
     public ResponseEntity<?> startRoleplay(@RequestBody Map<String, Object> body) {
         Long memberId = Long.valueOf(body.get("memberId").toString());
+        String token = body.get("token") != null ? body.get("token").toString() : null;
+        if (!checkToken(memberId, token)) {
+            return ResponseEntity.status(403).body(Map.of("message", "인증이 필요합니다."));
+        }
         String scenario = body.get("scenario").toString();
 
         Conversation conv = Conversation.builder()
@@ -165,6 +186,10 @@ public class ConversationController {
     @PostMapping("/roleplay/{id}/messages")
     public ResponseEntity<?> sendRoleplayMessage(@PathVariable Long id, @RequestBody Map<String, String> body) {
         try {
+            Conversation owner = conversationRepository.findById(id).orElse(null);
+            if (owner == null || !checkToken(owner.getMemberId(), body.get("token"))) {
+                return ResponseEntity.status(403).body(Map.of("message", "인증이 필요합니다."));
+            }
             String userMessage = body.get("content");
 
             ConversationMessage userMsg = ConversationMessage.builder()
@@ -224,6 +249,10 @@ public class ConversationController {
 
     @PostMapping("/conversations/{id}/messages")
     public ResponseEntity<?> sendMessage(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        Conversation owner = conversationRepository.findById(id).orElse(null);
+        if (owner == null || !checkToken(owner.getMemberId(), body.get("token"))) {
+            return ResponseEntity.status(403).body(Map.of("message", "인증이 필요합니다."));
+        }
         String userMessage = body.get("content");
 
         ConversationMessage userMsg = ConversationMessage.builder()
