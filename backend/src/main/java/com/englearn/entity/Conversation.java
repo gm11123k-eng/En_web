@@ -25,7 +25,7 @@ public class Conversation {
     @Column(length = 20)
     private String type;
 
-    @Column(length = 50)
+    @Column(length = 255)
     private String scenario;
 
     @CreatedDate

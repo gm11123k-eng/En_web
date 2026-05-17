@@ -90,6 +90,138 @@ public class ConversationController {
         return ResponseEntity.ok(Map.of("conversation", conv, "messages", messages));
     }
 
+    private static final Map<String, Map<String, String>> SCENARIOS = Map.of(
+            "cafe", Map.of("title", "카페 주문", "emoji", "☕",
+                    "prompt", "You are a cafe barista. The user is a customer ordering. Start by greeting and asking for their order."),
+            "airport", Map.of("title", "공항 체크인", "emoji", "✈️",
+                    "prompt", "You are an airport check-in staff. The user is a passenger. Start by greeting and asking for their passport and ticket."),
+            "hotel", Map.of("title", "호텔 체크인", "emoji", "🏨",
+                    "prompt", "You are a hotel receptionist. The user is a guest checking in. Start by greeting and asking for their reservation."),
+            "interview", Map.of("title", "영어 면접", "emoji", "💼",
+                    "prompt", "You are a job interviewer. The user is a candidate. Start by greeting and asking them to introduce themselves."),
+            "direction", Map.of("title", "길 묻기", "emoji", "🗺️",
+                    "prompt", "You are a local person on the street. The user is a tourist asking for directions. Respond naturally."),
+            "shopping", Map.of("title", "쇼핑", "emoji", "🛍️",
+                    "prompt", "You are a clothing store clerk. The user is a customer shopping. Start by greeting and offering help.")
+    );
+
+    @GetMapping("/roleplay/scenarios")
+    public ResponseEntity<?> getScenarios() {
+        List<Map<String, String>> list = new ArrayList<>();
+        for (Map.Entry<String, Map<String, String>> e : SCENARIOS.entrySet()) {
+            list.add(Map.of(
+                    "id", e.getKey(),
+                    "title", e.getValue().get("title"),
+                    "emoji", e.getValue().get("emoji")
+            ));
+        }
+        return ResponseEntity.ok(list);
+    }
+
+    private String scenarioPrompt(String scenario) {
+        Map<String, String> info = SCENARIOS.get(scenario);
+        if (info != null) {
+            return info.get("prompt");
+        }
+        return "You are role-playing with the user in the following situation: " + scenario
+                + ". Play your role naturally and respond in English.";
+    }
+
+    private String scenarioTitle(String scenario) {
+        Map<String, String> info = SCENARIOS.get(scenario);
+        return info != null ? info.get("title") : scenario;
+    }
+
+    @PostMapping("/roleplay/start")
+    public ResponseEntity<?> startRoleplay(@RequestBody Map<String, Object> body) {
+        Long memberId = Long.valueOf(body.get("memberId").toString());
+        String scenario = body.get("scenario").toString();
+
+        Conversation conv = Conversation.builder()
+                .memberId(memberId)
+                .type("roleplay")
+                .scenario(scenario)
+                .build();
+        conversationRepository.save(conv);
+
+        String aiGreeting = callGemini(scenarioPrompt(scenario) + " Start the conversation. Keep it to 1-2 sentences.");
+        if (aiGreeting == null) aiGreeting = "Hello! How can I help you today?";
+
+        ConversationMessage msg = ConversationMessage.builder()
+                .conversationId(conv.getId())
+                .role("ai")
+                .content(aiGreeting)
+                .build();
+        messageRepository.save(msg);
+
+        return ResponseEntity.ok(Map.of(
+                "conversationId", conv.getId(),
+                "scenario", scenario,
+                "title", scenarioTitle(scenario),
+                "message", aiGreeting
+        ));
+    }
+
+    @PostMapping("/roleplay/{id}/messages")
+    public ResponseEntity<?> sendRoleplayMessage(@PathVariable Long id, @RequestBody Map<String, String> body) {
+        try {
+            String userMessage = body.get("content");
+
+            ConversationMessage userMsg = ConversationMessage.builder()
+                    .conversationId(id)
+                    .role("user")
+                    .content(userMessage)
+                    .build();
+            messageRepository.save(userMsg);
+
+            Conversation conv = conversationRepository.findById(id).orElse(null);
+
+            List<ConversationMessage> history = messageRepository.findByConversationIdOrderByCreatedAtAsc(id);
+            StringBuilder context = new StringBuilder();
+            context.append(scenarioPrompt(conv.getScenario())).append(" ");
+            context.append("Reply in English, keep it natural and short. ");
+            context.append("If the user made mistakes, point them out. ");
+            context.append("Reply in this JSON format: {\"reply\":\"your reply\",\"correction\":\"correction or null\"}\n\n");
+
+            for (ConversationMessage m : history) {
+                context.append(m.getRole().equals("user") ? "User: " : "AI: ");
+                context.append(m.getContent()).append("\n");
+            }
+
+            String aiResult = callGemini(context.toString());
+            String reply = "Sorry, could you say that again?";
+            String correction = null;
+
+            if (aiResult != null) {
+                String json = aiResult;
+                if (json.contains("```")) {
+                    json = json.replaceAll("```json\\s*", "").replaceAll("```\\s*", "");
+                }
+                JsonNode node = objectMapper.readTree(json.trim());
+                reply = node.get("reply").asText();
+                if (node.has("correction") && !node.get("correction").isNull()
+                        && !node.get("correction").asText().equals("null")) {
+                    correction = node.get("correction").asText();
+                }
+            }
+
+            ConversationMessage aiMsg = ConversationMessage.builder()
+                    .conversationId(id)
+                    .role("ai")
+                    .content(reply)
+                    .correction(correction)
+                    .build();
+            messageRepository.save(aiMsg);
+
+            return ResponseEntity.ok(Map.of(
+                    "reply", reply,
+                    "correction", correction != null ? correction : ""
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", e.toString()));
+        }
+    }
+
     @PostMapping("/conversations/{id}/messages")
     public ResponseEntity<?> sendMessage(@PathVariable Long id, @RequestBody Map<String, String> body) {
         String userMessage = body.get("content");
